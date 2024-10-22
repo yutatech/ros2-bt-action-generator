@@ -1,5 +1,6 @@
 import re
 
+
 def case_formatter(input_string: str, case_type: str) -> str:
     """文字列のcaseを整える
 
@@ -20,8 +21,11 @@ def case_formatter(input_string: str, case_type: str) -> str:
     """
 
     if bool(re.search(r'[^a-zA-Z0-9-_]', input_string)):
-        raise ValueError('[case_formatter] Invalid input_string: \"' + input_string + '\" The string must not contain anything other than alphanumeric characters, -, and _.')
-    
+        raise ValueError(
+            '[case_formatter] Invalid input_string: \"' + input_string +
+            '\" The string must not contain anything other than alphanumeric characters, -, and _.'
+        )
+
     # 大文字の前に空白を挿入（先頭以外の場合）
     s = re.sub(r'(?<!^)(?=[A-Z])', ' ', input_string)
     # 非アルファベット文字を空白に置き換え
@@ -47,11 +51,13 @@ def case_formatter(input_string: str, case_type: str) -> str:
             string_word_list[i] = '-' + string_word_list[i]
         output_string = ''.join(string_word_list)
     else:
-        raise ValueError('[case_formatter] Invalid case_type argument: ' + case_type)
-    
+        raise ValueError('[case_formatter] Invalid case_type argument: ' +
+                         case_type)
+
     return output_string
 
+
 if __name__ == '__main__':
-    input_string = 'case-is-Not-onnnaji_denai-yabame1Dana'
-    output_string = case_formatter(input_string, 'UPPER_SNAKE_CASE')
-    print(output_string)
+    input = 'case-is-Not-onnnaji_denai-yabame1Dana'
+    output = case_formatter(input, 'UPPER_SNAKE_CASE')
+    print(output)
