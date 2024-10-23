@@ -7,6 +7,7 @@
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_ros2/bt_action_node.hpp"
 #include "action_package_name/action/action_name.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 class ActionClassName
     : public BT::RosActionNode<
@@ -56,7 +57,11 @@ public:
   }
 
   BT::NodeStatus onResultReceived(const WrappedResult& result) override {
-    return BT::NodeStatus::SUCCESS;
+    if (result.code ==  rclcpp_action::ResultCode::SUCCEEDED) {
+      return BT::NodeStatus::SUCCESS;
+    } else {
+      return BT::NodeStatus::FAILURE;
+    }
   }
 
   BT::NodeStatus onFeedback(const std::shared_ptr<const Feedback> feedback) override {
