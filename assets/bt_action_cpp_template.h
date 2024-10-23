@@ -48,6 +48,9 @@ public:
       getInput<unsigned>("default_arg2", default_arg2);
     }
 
+    getInput<unsigned>("arg3", arg3);
+    getInput<unsigned>("arg4", arg4);
+
     goal.default_arg1 = default_arg1;
     goal.default_arg2 = default_arg2;
     goal.arg3 = arg3;

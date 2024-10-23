@@ -158,6 +158,12 @@ def bt_action_cpp_editor(
         set_goal_content += f"    }} else {{\n"
         set_goal_content += f'      getInput<{default_arg["var_c_type"]}>("{default_arg["bt_arg_name"]}", {default_arg["bt_arg_name"]});\n'
         set_goal_content += f"    }}\n"
+        
+    # setGoalの編集 - 非 default 引数の処理
+    set_goal_content += "\n"
+
+    for non_default_arg in non_default_args:
+        set_goal_content += f'    getInput<{non_default_arg["var_c_type"]}>("{non_default_arg["bt_arg_name"]}", {non_default_arg["bt_arg_name"]});\n'
 
     # setGoalの編集 - ros2 actionのメンバ変数への代入
     set_goal_content += "\n"
