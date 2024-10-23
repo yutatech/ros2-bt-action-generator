@@ -22,7 +22,7 @@ def bt_action_cpp_generator(
         )
         if os.path.exists(plugin_file_path) == False:
             # ファイルをコピー
-            shutil.copy(bt_plugin_cpp_template, plugin_file_path)
+            shutil.copy(os.path.expanduser(bt_plugin_cpp_template), plugin_file_path)
 
         bt_action_cpp_editor(
             plugin_file_path,
@@ -32,7 +32,6 @@ def bt_action_cpp_generator(
             bt_action_default_arguments,
             bt_action_ignore_arguments,
         )
-        break
 
 
 def bt_action_cpp_editor(
@@ -87,16 +86,12 @@ def bt_action_cpp_editor(
     for input_port in action["goal"]:
         if input_port["var_name"] in bt_action_ignore_arguments:
             continue
-        provided_basic_ports_str += (
-            f'BT::InputPort<{input_port["var_c_type"]}>("{input_port["bt_arg_name"]}"), '
-        )
+        provided_basic_ports_str += f'BT::InputPort<{input_port["var_c_type"]}>("{input_port["bt_arg_name"]}"), '
 
     for output_port in action["result"]:
         if output_port["var_name"] in bt_action_ignore_arguments:
             continue
-        provided_basic_ports_str += (
-            f'BT::OutputPort<{output_port["var_c_type"]}>("{output_port["bt_arg_name"]}"), '
-        )
+        provided_basic_ports_str += f'BT::OutputPort<{output_port["var_c_type"]}>("{output_port["bt_arg_name"]}"), '
     provided_basic_ports_str = provided_basic_ports_str[:-2]
 
     plugin_file = modify_block_after_keyword(
@@ -156,15 +151,17 @@ def bt_action_cpp_editor(
     for default_arg in default_args:
         set_goal_content += f'    if ({default_arg["bt_arg_name"]}_.has_value()) {{\n'
         set_goal_content += f'      {default_arg["bt_arg_name"]} = {default_arg["bt_arg_name"]}_.value();\n'
-        set_goal_content += f'    }} else {{\n'
+        set_goal_content += f"    }} else {{\n"
         set_goal_content += f'      getInput<{default_arg["var_c_type"]}>("{default_arg["bt_arg_name"]}", {default_arg["bt_arg_name"]});\n'
-        set_goal_content += f'    }}\n'
+        set_goal_content += f"    }}\n"
 
     # setGoalの編集 - ros2 actionのメンバ変数への代入
     set_goal_content += "\n"
 
     for default_arg in default_args:
-        set_goal_content += f'    goal.{default_arg["var_name"]} = {default_arg["bt_arg_name"]};\n'
+        set_goal_content += (
+            f'    goal.{default_arg["var_name"]} = {default_arg["bt_arg_name"]};\n'
+        )
 
     for non_default_arg in non_default_args:
         set_goal_content += f'    goal.{non_default_arg["var_name"]} = {non_default_arg["bt_arg_name"]};\n'
@@ -183,14 +180,13 @@ def bt_action_cpp_editor(
 
     # onResultReceivedの編集
     on_result_received_content = "\n"
-    
+
     for output_port in action["result"]:
         if output_port["var_name"] in bt_action_ignore_arguments:
             continue
-        on_result_received_content += f'    setOutput<{output_port["var_c_type"]}>(\"{output_port["bt_arg_name"]}\", result.result.{output_port["var_name"]});\n'
-    
-    on_result_received_content += \
-"""
+        on_result_received_content += f'    setOutput<{output_port["var_c_type"]}>("{output_port["bt_arg_name"]}", result.result.{output_port["var_name"]});\n'
+
+    on_result_received_content += """
     if (result.code ==  rclcpp_action::ResultCode::SUCCEEDED) {
       return BT::NodeStatus::SUCCESS;
     } else {
@@ -198,8 +194,10 @@ def bt_action_cpp_editor(
     }
   \
 """
-    
-    plugin_file = modify_block_after_keyword(plugin_file, "onResultReceived", on_result_received_content)
+
+    plugin_file = modify_block_after_keyword(
+        plugin_file, "onResultReceived", on_result_received_content
+    )
 
     # praivate メンバの編集
     plugin_file = replace_private_members(
@@ -399,9 +397,7 @@ def replace_private_members(code, class_name, members_to_remove, new_members):
         modified_private_section = private_section
 
         # ;で分割してメンバの定義のリストを作成
-        member_list = re.findall(
-            r"([^;]*?;)", modified_private_section
-        )
+        member_list = re.findall(r"([^;]*?;)", modified_private_section)
         # メンバの定義のリストのうち削除するメンバのパターンと一致するものを削除
         for member_pattern in members_to_remove:
             for member in member_list:
@@ -412,11 +408,11 @@ def replace_private_members(code, class_name, members_to_remove, new_members):
 
         # 新しいメンバリストをprivateセクションの先頭に追加
         new_member_code = ""
-        
+
         for new_member in new_members:
             if not new_member in modified_private_section:
                 new_member_code += new_member + "\n"
-        
+
         modified_private_section = new_member_code + modified_private_section
 
         # 元のコードで private セクションを置換

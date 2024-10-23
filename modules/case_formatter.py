@@ -32,12 +32,11 @@ def case_formatter(input_string: str, case_type: str) -> str:
     s = re.sub(r'[^a-zA-Z0-9 ]', ' ', s)
     # 単語を分割し、各単語の最初の文字を大文字に変換
     string_word_list = s.lower().split()
-    print(string_word_list)
     if case_type == 'lower_snake_case':
         for i in range(1, len(string_word_list)):
             string_word_list[i] = '_' + string_word_list[i]
         output_string = ''.join(string_word_list)
-    if case_type == 'UPPER_SNAKE_CASE':
+    elif case_type == 'UPPER_SNAKE_CASE':
         for i in range(1, len(string_word_list)):
             string_word_list[i] = '_' + string_word_list[i]
         output_string = ''.join(string_word_list).upper()
@@ -58,6 +57,6 @@ def case_formatter(input_string: str, case_type: str) -> str:
 
 
 if __name__ == '__main__':
-    input = 'case-is-Not-onnnaji_denai-yabame1Dana'
+    input = 'case-is-Not-onnnaji_denai_-yabame1Dana'
     output = case_formatter(input, 'UPPER_SNAKE_CASE')
     print(output)
