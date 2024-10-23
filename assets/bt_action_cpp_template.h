@@ -47,7 +47,6 @@ public:
     } else {
       getInput<unsigned>("default_arg2", default_arg2);
     }
-    getInput<bool>("negative", negative);
 
     goal.default_arg1 = default_arg1;
     goal.default_arg2 = default_arg2;
