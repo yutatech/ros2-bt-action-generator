@@ -49,7 +49,7 @@ def analize_action(pkg_directory: str, action_rel_path: str) -> dict[str, Any]:
 
     Returns:
         dict[str, Any]: 解析結果
-            {"action_name": str}: アクション名
+            {"ros2_action_name": str}: アクション名
             {"goal": [{"var_name": str, "var_c_type": str, "unit": str}]}: goalのメンバ変数
             {"result": [{"var_name": str, "var_c_type": str, "unit": str}]}: resultのメンバ変数
             {"feedback": [{"var_name": str, "var_c_type": str, "unit": str}]}: feedbackのメンバ変数
@@ -78,7 +78,7 @@ def analize_action(pkg_directory: str, action_rel_path: str) -> dict[str, Any]:
             action_file_path)
 
     # action nameを抽出
-    result = {'action_name': os.path.splitext(os.path.basename(action_rel_path))[0]}
+    result = {'ros2_action_name': os.path.splitext(os.path.basename(action_rel_path))[0]}
 
     # goal, result, feedbackのメンバ変数を解析
     keys = ['goal', 'result', 'feedback']
