@@ -1,0 +1,24 @@
+{
+    "ros2_package_abs_path" : ["~/path/to/pkg"],
+    "btproj_abs_path" : "~/path/to/.btproj",
+    "ros2_bt_source_abs_path" : "~/path/to/bt.cc",
+    "bt_plugin_save_path" : "~/path/to/plugins",
+    "bt_action_name_case" : "UpperCamelCase",
+    "bt_plugin_cpp_template" : "~/path/to/bt_action_cpp_template.h",
+    "bt_plugin_cpp_include_guard_prefix" : "INC_GUARD_PREFIX",
+    "bt_plugin_file_name_exclude_words" : [
+      "interfaces"
+    ],
+    "bt_action_name_exclude_words" : [
+      "server",
+      "client",
+      "interfaces"
+    ],
+    "bt_action_default_arguments" : [
+      ".*_address",
+      ".*_port"
+    ],
+    "bt_action_ignore_arguments" : [
+      "success"
+    ]
+  }
