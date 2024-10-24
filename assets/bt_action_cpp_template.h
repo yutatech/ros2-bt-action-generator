@@ -67,10 +67,12 @@ public:
   }
 
   BT::NodeStatus onFeedback(const std::shared_ptr<const Feedback> feedback) override {
+    (void) feedback;
     return BT::NodeStatus::RUNNING;
   }
 
   BT::NodeStatus onFailure(BT::ActionNodeErrorCode error_code) override {
+    (void) error_code;
     return BT::NodeStatus::FAILURE;
   }
 

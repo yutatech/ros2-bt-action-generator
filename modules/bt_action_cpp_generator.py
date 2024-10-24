@@ -196,7 +196,7 @@ def bt_action_cpp_editor(
     for output_port in action["result"]:
         if output_port["var_name"] in bt_action_ignore_arguments:
             continue
-        on_result_received_content += f'    setOutput<{output_port["var_c_type"]}>("{output_port["bt_arg_name"]}", result.result.{output_port["var_name"]});\n'
+        on_result_received_content += f'    setOutput<{output_port["var_c_type"]}>("{output_port["bt_arg_name"]}", result.result->{output_port["var_name"]});\n'
 
     on_result_received_content += """
     if (result.code ==  rclcpp_action::ResultCode::SUCCEEDED) {
