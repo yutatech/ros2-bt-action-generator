@@ -362,6 +362,7 @@ def edit_bt_tree_models_action(btproj_path, node_model_info):
                 for port in action_element.findall("input_port")
             }
             
+            # ない要素の追加
             if 'action_name' not in existing_input_ports:
                 action_input_port = ET.Element(
                     "input_port",
@@ -399,6 +400,17 @@ def edit_bt_tree_models_action(btproj_path, node_model_info):
                         "output_port", name=output_port["name"], default="{}"
                     )
                     action_element.append(new_output_port)
+                    
+            # 不要な要素の削除
+            for existing_port_name in existing_input_ports:
+                if existing_port_name not in [port["name"] for port in plugin["default_input_ports"]] + [port["name"] for port in plugin["non_default_input_ports"]]:
+                    action_element.remove(existing_input_ports[existing_port_name])
+                    
+            for existing_port_name in existing_output_ports:
+                if existing_port_name not in [port["name"] for port in plugin["output_ports"]]:
+                    action_element.remove(existing_output_ports[existing_port_name])
+            
+            
         else:
             # 新しいActionを追加
             new_action = ET.Element("Action", ID=action_name, editable="true")

@@ -2,7 +2,7 @@ from modules import ros2_action_analyzer
 from modules import bt_action_cpp_generator
 from modules import name_generator
 from modules import bt_node_generator
-import os, argparse, json
+import os, argparse, json, glob
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -48,40 +48,47 @@ if __name__ == "__main__":
         config = json.load(file)
 
     if args.plugin:
-        # ros2 action の解析
-        actions = ros2_action_analyzer.ros2_action_analyzer(
-            config["ros2_package_abs_path"]
-        )
+        
+        ros2_pkg_paths = []
+        for path in config["ros2_package_abs_path"]:
+            ros2_pkg_paths += [d for d in glob.glob(os.path.expanduser(path)) if os.path.isdir(d)]
 
-        # ros2 pkg name の取得
-        ros2_pkg_name = os.path.basename(config["ros2_package_abs_path"])
-        # パスの末尾がスラッシュで終わっている場合を考慮
-        if ros2_pkg_name == "":
-            ros2_pkg_name = os.path.basename(
-                os.path.dirname(config["ros2_package_abs_path"])
+        for ros2_pkg_path in ros2_pkg_paths:
+            
+            # ros2 action の解析
+            actions = ros2_action_analyzer.ros2_action_analyzer(
+                ros2_pkg_path
             )
+            
+            # ros2 pkg name の取得
+            ros2_pkg_name = os.path.basename(ros2_pkg_path)
+            # パスの末尾がスラッシュで終わっている場合を考慮
+            if ros2_pkg_name == "":
+                ros2_pkg_name = os.path.basename(
+                    os.path.dirname(ros2_pkg_path)
+                )
 
-        for action in actions:
-            action["bt_plugin_file_name"] = name_generator.generate_bt_plugin_file_name(
+            for action in actions:
+                action["bt_plugin_file_name"] = name_generator.generate_bt_plugin_file_name(
+                    ros2_pkg_name,
+                    action["ros2_action_name"],
+                    config["bt_plugin_file_name_exclude_words"],
+                )
+                action["bt_action_name"] = name_generator.generate_bt_action_name(
+                    ros2_pkg_name,
+                    action["ros2_action_name"],
+                    config["bt_action_name_exclude_words"],
+                )
+
+            bt_action_cpp_generator.bt_action_cpp_generator(
+                config["bt_plugin_save_path"],
+                config["bt_plugin_cpp_template"],
+                config["bt_plugin_cpp_include_guard_prefix"],
+                actions,
                 ros2_pkg_name,
-                action["ros2_action_name"],
-                config["bt_plugin_file_name_exclude_words"],
+                config["bt_action_default_arguments"],
+                config["bt_action_ignore_arguments"],
             )
-            action["bt_action_name"] = name_generator.generate_bt_action_name(
-                ros2_pkg_name,
-                action["ros2_action_name"],
-                config["bt_action_name_exclude_words"],
-            )
-
-        bt_action_cpp_generator.bt_action_cpp_generator(
-            config["bt_plugin_save_path"],
-            config["bt_plugin_cpp_template"],
-            config["bt_plugin_cpp_include_guard_prefix"],
-            actions,
-            ros2_pkg_name,
-            config["bt_action_default_arguments"],
-            config["bt_action_ignore_arguments"],
-        )
 
     elif args.bt:
         bt_node_generator.bt_node_generator(
