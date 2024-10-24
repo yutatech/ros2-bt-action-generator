@@ -28,6 +28,8 @@ def bt_node_generator(
     for file in files:
         plugin_info = get_plugin_from_cpp(file)
         plugins_info.append(plugin_info)
+        
+    plugins_info = [item for item in plugins_info if item != []]
 
     edit_bt_source_action_area(ros2_source_path, plugins_info)
 
@@ -80,7 +82,11 @@ def get_plugin_from_cpp(plugin_file_name: str) -> list[Any]:
     # providedBasicPortsのあとのブロックを取得する
     provided_basic_ports = re.search(
         r"(providedBasicPorts[^{]*?{(.+)})", plugin_file
-    ).group(1)
+    )
+    if provided_basic_ports == None:
+        return []
+    else:
+        provided_basic_ports = provided_basic_ports.group(1)
 
     # provided_basic_portsの中からInputPortの型と名前を取得する
     input_ports_str = re.findall(
