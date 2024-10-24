@@ -483,9 +483,12 @@ def type_to_default_value(type: str):
         "int64_t",
         "float",
         "double",
+        "unsigned",
     ]:
         return "0"
     elif type in ["char", "std::string" "std::u16string"]:
         return ""
     elif type == "bool":
         return "false"
+    else:
+        return ""
