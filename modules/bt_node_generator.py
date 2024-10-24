@@ -409,7 +409,7 @@ def edit_bt_tree_models_action(btproj_path, node_model_info):
                     
             # 不要な要素の削除
             for existing_port_name in existing_input_ports:
-                if existing_port_name not in [port["name"] for port in plugin["default_input_ports"]] + [port["name"] for port in plugin["non_default_input_ports"]]:
+                if existing_port_name not in [port["name"] for port in plugin["default_input_ports"]] + [port["name"] for port in plugin["non_default_input_ports"]] + ['action_name']:
                     action_element.remove(existing_input_ports[existing_port_name])
                     
             for existing_port_name in existing_output_ports:
