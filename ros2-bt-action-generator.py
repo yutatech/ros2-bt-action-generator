@@ -48,31 +48,31 @@ if __name__ == "__main__":
         config = json.load(file)
 
     if args.plugin:
-        
+
         ros2_pkg_paths = []
         for path in config["ros2_package_abs_path"]:
-            ros2_pkg_paths += [d for d in glob.glob(os.path.expanduser(path)) if os.path.isdir(d)]
+            ros2_pkg_paths += [
+                d for d in glob.glob(os.path.expanduser(path)) if os.path.isdir(d)
+            ]
 
         for ros2_pkg_path in ros2_pkg_paths:
-            
+
             # ros2 action の解析
-            actions = ros2_action_analyzer.ros2_action_analyzer(
-                ros2_pkg_path
-            )
-            
+            actions = ros2_action_analyzer.ros2_action_analyzer(ros2_pkg_path)
+
             # ros2 pkg name の取得
             ros2_pkg_name = os.path.basename(ros2_pkg_path)
             # パスの末尾がスラッシュで終わっている場合を考慮
             if ros2_pkg_name == "":
-                ros2_pkg_name = os.path.basename(
-                    os.path.dirname(ros2_pkg_path)
-                )
+                ros2_pkg_name = os.path.basename(os.path.dirname(ros2_pkg_path))
 
             for action in actions:
-                action["bt_plugin_file_name"] = name_generator.generate_bt_plugin_file_name(
-                    ros2_pkg_name,
-                    action["ros2_action_name"],
-                    config["bt_plugin_file_name_exclude_words"],
+                action["bt_plugin_file_name"] = (
+                    name_generator.generate_bt_plugin_file_name(
+                        ros2_pkg_name,
+                        action["ros2_action_name"],
+                        config["bt_plugin_file_name_exclude_words"],
+                    )
                 )
                 action["bt_action_name"] = name_generator.generate_bt_action_name(
                     ros2_pkg_name,
@@ -92,5 +92,9 @@ if __name__ == "__main__":
 
     elif args.bt:
         bt_node_generator.bt_node_generator(
-            config["bt_plugin_save_path"], config["ros2_bt_source_abs_path"], config["btproj_abs_path"]
+            config["bt_plugin_save_path"],
+            config["ros2_bt_source_abs_path"],
+            config["btproj_abs_path"],
+            config["ros2_node_name_suffix"],
+            config["ros2_node_name_exclude_words"],
         )

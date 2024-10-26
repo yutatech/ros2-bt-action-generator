@@ -5,10 +5,15 @@ import json, csv
 from io import StringIO
 import xml.etree.ElementTree as ET
 import xml.dom.minidom
+from modules import case_formatter
 
 
 def bt_node_generator(
-    bt_plugin_save_path: str, ros2_bt_source_abs_path: str, btproj_abs_path: str
+    bt_plugin_save_path: str,
+    ros2_bt_source_abs_path: str,
+    btproj_abs_path: str,
+    ros2_node_name_suffix: str,
+    ros2_node_name_exclude_words: list[str],
 ):
 
     bt_plugin_dir = os.path.expanduser(bt_plugin_save_path)
@@ -26,9 +31,11 @@ def bt_node_generator(
 
     plugins_info = []
     for file in files:
-        plugin_info = get_plugin_from_cpp(file)
+        plugin_info = get_plugin_from_cpp(
+            file, ros2_node_name_suffix, ros2_node_name_exclude_words
+        )
         plugins_info.append(plugin_info)
-        
+
     plugins_info = [item for item in plugins_info if item != []]
 
     edit_bt_source_action_area(ros2_source_path, plugins_info)
@@ -39,21 +46,30 @@ def bt_node_generator(
     named_actions_list_for_bt = edit_bt_source_named_action_area(
         ros2_source_path, named_actions_info
     )
-    
-    node_model_info = merge_named_actions_info_plugins_info(named_actions_list_for_bt, plugins_info)
+
+    node_model_info = merge_named_actions_info_plugins_info(
+        named_actions_list_for_bt, plugins_info
+    )
 
     edit_bt_tree_models_action(btproj_path, node_model_info)
 
 
-def get_plugin_from_cpp(plugin_file_name: str) -> list[Any]:
+def get_plugin_from_cpp(
+    plugin_file_name: str,
+    ros2_node_name_suffix: str,
+    ros2_node_name_exclude_words: list[str],
+) -> list[Any]:
     """bt plugin ファイルから bt plugin 情報を取得する
 
     Args:
         plugin_file_name (str): plugin ファイル名
+        ros2_node_name_suffix (str):
+        ros2_node_name_exclude_words (list[str]):
 
     Returns:
         list[Any]: ポート情報
             {"action_class_name" : str,
+             "ros2_action_name" : str,
              "non_default_input_ports" : [{"name": str, "type" : str}],
              "default_input_ports" : [{"name" : str, "type" : str, "c_name" : str}],
              "output_ports" : [{"name" : str}]}
@@ -65,6 +81,21 @@ def get_plugin_from_cpp(plugin_file_name: str) -> list[Any]:
 
     # class 名を取得する
     class_name = re.search(r"class\s+(\w+)\s*:", plugin_file).group(1)
+
+    # ros2 action 名を取得する
+    ros2_node_name = re.search(r'#include\s*["<](.+?)\/action\/.+?[">]', plugin_file)
+    ros2_action_name = re.search(r'#include\s*["<].+?\/action\/(.+?)\.h.*?[">]', plugin_file)
+    if ros2_node_name != None:
+        ros2_node_name = ros2_node_name.group(1)
+        for exclude_word in ros2_node_name_exclude_words:
+            ros2_node_name = ros2_node_name.replace(exclude_word, "")
+        ros2_node_name = ros2_node_name + "_" + ros2_node_name_suffix
+        ros2_node_name = case_formatter.case_formatter(
+            ros2_node_name, "lower_snake_case"
+        )
+        ros2_action_name = '/' + ros2_node_name + '/' + ros2_action_name.group(1)
+    else:
+        ros2_action_name = ""
 
     # コンストラクタの()の中身を取得する
     constructor_str = re.search(r"(\w+)\s*\((.+)\)", plugin_file).group(2)
@@ -80,9 +111,7 @@ def get_plugin_from_cpp(plugin_file_name: str) -> list[Any]:
             )
 
     # providedBasicPortsのあとのブロックを取得する
-    provided_basic_ports = re.search(
-        r"(providedBasicPorts[^{]*?{(.+)})", plugin_file
-    )
+    provided_basic_ports = re.search(r"(providedBasicPorts[^{]*?{(.+)})", plugin_file, re.DOTALL)
     if provided_basic_ports == None:
         return []
     else:
@@ -123,6 +152,7 @@ def get_plugin_from_cpp(plugin_file_name: str) -> list[Any]:
 
     return {
         "action_class_name": class_name,
+        "ros2_action_name" : ros2_action_name,
         "non_default_input_ports": non_default_input_ports,
         "default_input_ports": default_input_ports,
         "output_ports": output_ports,
@@ -316,24 +346,32 @@ def edit_bt_source_named_action_area(
     return named_actions_list_for_bt
 
 
-def merge_named_actions_info_plugins_info(named_actions_list_for_bt: list[Any], plugins_info: list[Any]) -> list[Any]:
+def merge_named_actions_info_plugins_info(
+    named_actions_list_for_bt: list[Any], plugins_info: list[Any]
+) -> list[Any]:
     node_model_info = plugins_info.copy()
-    
+
     for named_action_info in named_actions_list_for_bt:
         named_action = {}
         named_action["action_class_name"] = named_action_info["action_name"]
-        
+
         # named_action_infoのclass_nameから、action classに関する情報をplugins_infoから抽出
         target_action_name = named_action_info["class_name"]
-        matching_dicts = [d for d in plugins_info if d.get('action_class_name') == target_action_name]
+        matching_dicts = [
+            d for d in plugins_info if d.get("action_class_name") == target_action_name
+        ]
         
+        named_action["ros2_action_name"] = matching_dicts[0]["ros2_action_name"]
         named_action["default_input_ports"] = []
-        named_action["non_default_input_ports"] = matching_dicts[0]["non_default_input_ports"]
+        named_action["non_default_input_ports"] = matching_dicts[0][
+            "non_default_input_ports"
+        ]
         named_action["output_ports"] = matching_dicts[0]["output_ports"]
 
         node_model_info.append(named_action)
-        
+
     return node_model_info
+
 
 def edit_bt_tree_models_action(btproj_path, node_model_info):
     # bt btprojファイルの読み込み
@@ -345,7 +383,6 @@ def edit_bt_tree_models_action(btproj_path, node_model_info):
         r"( *<TreeNodesModel>.+</TreeNodesModel>)", btproj_file, re.DOTALL
     )
     edit_area = edit_area_match.group(0)
-    # print(edit_area)
 
     tree = ET.fromstring(edit_area)
 
@@ -367,16 +404,16 @@ def edit_bt_tree_models_action(btproj_path, node_model_info):
                 port.attrib["name"]: port
                 for port in action_element.findall("input_port")
             }
-            
+
             # ない要素の追加
-            if 'action_name' not in existing_input_ports:
+            if "action_name" not in existing_input_ports:
                 action_input_port = ET.Element(
                     "input_port",
-                    name='action_name',
-                    default='',
+                    name="action_name",
+                    default=plugin["ros2_action_name"],
                 )
                 action_element.append(action_input_port)
-            
+
             for default_port in plugin["default_input_ports"]:
                 if default_port["name"] not in existing_input_ports:
                     new_input_port = ET.Element(
@@ -406,26 +443,31 @@ def edit_bt_tree_models_action(btproj_path, node_model_info):
                         "output_port", name=output_port["name"], default="{}"
                     )
                     action_element.append(new_output_port)
-                    
+
             # 不要な要素の削除
             for existing_port_name in existing_input_ports:
-                if existing_port_name not in [port["name"] for port in plugin["default_input_ports"]] + [port["name"] for port in plugin["non_default_input_ports"]] + ['action_name']:
+                if existing_port_name not in [
+                    port["name"] for port in plugin["default_input_ports"]
+                ] + [port["name"] for port in plugin["non_default_input_ports"]] + [
+                    "action_name"
+                ]:
                     action_element.remove(existing_input_ports[existing_port_name])
-                    
+
             for existing_port_name in existing_output_ports:
-                if existing_port_name not in [port["name"] for port in plugin["output_ports"]]:
+                if existing_port_name not in [
+                    port["name"] for port in plugin["output_ports"]
+                ]:
                     action_element.remove(existing_output_ports[existing_port_name])
-            
-            
+
         else:
             # 新しいActionを追加
             new_action = ET.Element("Action", ID=action_name, editable="true")
-            
+
             # action_nameのinput_portを追加
             action_input_port = ET.Element(
                 "input_port",
-                name='action_name',
-                default='',
+                name="action_name",
+                default=plugin["ros2_action_name"],
             )
             new_action.append(action_input_port)
 
@@ -464,11 +506,10 @@ def edit_bt_tree_models_action(btproj_path, node_model_info):
     pretty_xml = pretty_xml.replace('<?xml version="1.0" ?>\n', "")
 
     btproj_file = btproj_file.replace(edit_area, pretty_xml)
-    
+
     # btpojファイルの保存
     with open(btproj_path, "w") as f:
         f.write(btproj_file)
-    
 
 
 def type_to_default_value(type: str):

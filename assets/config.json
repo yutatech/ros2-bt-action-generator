@@ -6,6 +6,8 @@
     "bt_action_name_case" : "UpperCamelCase",
     "bt_plugin_cpp_template" : "~/path/to/bt_action_cpp_template.h",
     "bt_plugin_cpp_include_guard_prefix" : "INC_GUARD_PREFIX",
+    "ros2_node_name_suffix" : "_node",
+    "ros2_node_name_exclude_words" : ["interfaces"],
     "bt_plugin_file_name_exclude_words" : [
       "interfaces"
     ],
