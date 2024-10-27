@@ -86,6 +86,8 @@ def analize_action(pkg_directory: str, action_rel_path: str) -> dict[str, Any]:
         result[keys[i]] = []
         for j in range(len(splited_lines[i])):
             result[keys[i]].append(analize_action_member(splited_lines[i][j]))
+        result[keys[i]] = [item for item in result[keys[i]] if item]
+    # print(result)
     return result
 
 
@@ -100,24 +102,9 @@ def analize_action_member(action_member_line: str) -> dict[str, str]:
             {"var_name": str} : メンバ変数名
             {"var_c_type": str} : メンバ変数のC言語の型
             {"unit": str} : メンバ変数の単位
+        None : 解析失敗時
     """
-
-    # 面部変数の行を最初の#で分割
-    splited_line = action_member_line.split('#', 1)
-    if len(splited_line) != 1 and len(splited_line) != 2:
-        raise ValueError(
-            '[ros2_action_analyzer] Invalid .action file format: ' +
-            action_member_line)
-
-    # 変数定義部分をtypeとnameに分割
-    vars_str = splited_line[0].split(' ')
-    vars_str = [var_str for var_str in vars_str if var_str]
-    if len(vars_str) != 2:
-        raise ValueError(
-            '[ros2_action_analyzer] Invalid .action declare format: ' +
-            action_member_line)
-    [ros_type, var_name] = vars_str
-
+    
     # ros_typeをc_typeに変換
     ros_type_to_c_type = {
         'uint8': 'uint8_t',
@@ -136,6 +123,30 @@ def analize_action_member(action_member_line: str) -> dict[str, str]:
         'string': 'std::string',
         'bool': 'bool'
     }
+    
+    if re.fullmatch(r'[A-Z0-9_]+', action_member_line.strip().split(' ')[1]):
+        # 定数の行は無視
+        return None
+    elif not action_member_line.strip().split(' ')[0] in ros_type_to_c_type.keys():
+        # ros_typeが不明な場合は無視
+        return None
+
+    # 面部変数の行を最初の#で分割
+    splited_line = action_member_line.split('#', 1)
+    if len(splited_line) != 1 and len(splited_line) != 2:
+        raise ValueError(
+            '[ros2_action_analyzer] Invalid .action file format: ' +
+            action_member_line)
+
+    # 変数定義部分をtypeとnameに分割
+    vars_str = splited_line[0].split(' ')
+    vars_str = [var_str for var_str in vars_str if var_str]
+    if len(vars_str) != 2:
+        raise ValueError(
+            '[ros2_action_analyzer] Invalid .action declare format: ' +
+            action_member_line)
+    [ros_type, var_name] = vars_str
+
     c_type = ros_type_to_c_type[ros_type]
 
     # コメントから単位を抽出
