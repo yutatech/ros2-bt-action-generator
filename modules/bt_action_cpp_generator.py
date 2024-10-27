@@ -116,10 +116,7 @@ def bt_action_cpp_editor(
     # 初期化リストの編集
     initializers = []
     for default_arg in default_args:
-        bt_arg_name = default_arg["var_name"]
-        if input_port["unit"] != None:
-            bt_arg_name += f'_{default_arg["unit"]}'
-        initializers.append(f"{bt_arg_name}_({bt_arg_name})")
+        initializers.append(f'{default_arg["bt_arg_name"]}_({default_arg["bt_arg_name"]})')
 
     plugin_file = cpp_code_editor.modify_initializer_list(
         plugin_file, action["bt_action_name"], initializers

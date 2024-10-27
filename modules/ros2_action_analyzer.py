@@ -87,7 +87,6 @@ def analize_action(pkg_directory: str, action_rel_path: str) -> dict[str, Any]:
         for j in range(len(splited_lines[i])):
             result[keys[i]].append(analize_action_member(splited_lines[i][j]))
         result[keys[i]] = [item for item in result[keys[i]] if item]
-    # print(result)
     return result
 
 
